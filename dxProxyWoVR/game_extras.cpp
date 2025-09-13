@@ -97,7 +97,7 @@ enum uiCutupLayout
     handActionbar,
     recountOmen,
     mouseover,
-    
+
     //rightClickMenu,
     //pinkSquare,
 };
@@ -184,8 +184,8 @@ float cfg_uiOffsetD = -0.94055f;
 int cfg_flyingMountID = 0;
 int cfg_groundMountID = 0;
 int cfg_hmdOnward = 0;
-int cfg_uiMultiplier = 3;
-int cfg_gameMultiplier = 2;
+float cfg_uiMultiplier = 3.0f;
+float cfg_gameMultiplier = 2.0f;
 bool cfg_disableControllers = false;
 bool cfg_showBodyFPS = false;
 inputController input = {}; //{ { 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
@@ -551,12 +551,12 @@ void readConfigFile()
         cfg_flyingMountID = std::stoi(s_cfg_flyingMountID);
         cfg_groundMountID = std::stoi(s_cfg_groundMountID);
         cfg_hmdOnward = std::stoi(s_cfg_hmdOnward);
-        cfg_uiMultiplier = std::stoi(s_cfg_uiMultiplier);
-        cfg_gameMultiplier = std::stoi(s_cfg_gameMultiplier);
+        cfg_uiMultiplier = std::stof(s_cfg_uiMultiplier);
+        cfg_gameMultiplier = std::stof(s_cfg_gameMultiplier);
         cfg_disableControllers = s_cfg_disableControllers != "0";
         cfg_showBodyFPS = s_cfg_showBodyFPS != "0";
-        if (cfg_uiMultiplier < 1) cfg_uiMultiplier = 1;
-        if (cfg_gameMultiplier < 1) cfg_gameMultiplier = 1;
+        if (cfg_uiMultiplier < 0.1) cfg_uiMultiplier = 0.1;
+        if (cfg_gameMultiplier < 0.1) cfg_gameMultiplier = 0.1;
 
         //hiddenTexture = (IDirect3DTexture9*)std::stol(s_cfg_groundMountID, NULL, 16);
     }
@@ -670,7 +670,7 @@ void DestroyTextures()
 
         DepthBuffer11[i].Release();
         DepthBuffer[i].Release();
-    }    
+    }
 }
 
 
@@ -787,10 +787,10 @@ bool CreateBuffers(IDirect3DDevice9* devDX9, POINT textureSizeUI)
 
     oskUI = RenderOSK(devDX9);
     oskUI.SetShadersLayout(vsTexture.Layout, vsTexture.VS, psTexture.PS);
-    
+
     xyzGizmo = RenderXYZGizmo(devDX9);
     xyzGizmo.SetShadersLayout(vsColor.Layout, vsColor.VS, psColor.PS);
-    
+
 
     doCutUI = false;
     std::vector<uiViewport> uiView = std::vector<uiViewport>();
@@ -921,7 +921,7 @@ void fnUpdateCameraHMD(int camAddress)
         XMMATRIX horizonLockMatirx = XMMatrixRotationAxis({ 1, 0, 0, 0 }, angles.vector4_f32[0]);
         cameraMatrix = horizonLockMatirx * cameraMatrix;
         cameraMatrixGame = DxToGame(cameraMatrix);
-        
+
         cameraMatrixIPD = XMMatrixIdentity();
         if (curEye == 0 || curEye == 1)
             cameraMatrixIPD = matEyeOffset[curEye] * matHMDPos;
@@ -1028,7 +1028,7 @@ void (msub_684D70)(int a, int b, int c)
     RECT sizePre = { *(int*)(c + 0x0), *(int*)(c + 0x4), *(int*)(c + 0x8), *(int*)(c + 0xC) };
 
     sub_684D70(a, b, c);
-    
+
     *(int*)(c + 0x0) = 0;
     *(int*)(c + 0x4) = 0;
     *(int*)(c + 0x8) = *(int*)(c + 0x0) + sizePre.right;
@@ -1042,6 +1042,9 @@ void (msub_684D70)(int a, int b, int c)
 //----
 void(msub_6A08D0_pre)()
 {
+    // config file needs to be read before cfg_gameMultiplier is used otherwise defaults would be applied
+    readConfigFile();
+
     svr->PreloadVR();
 
     hmdBufferSize = svr->GetBufferSize();
@@ -1159,7 +1162,8 @@ void msub_6A2040_post(void* ecx, bool* retVal)
         devDX11.createDevice();
         logError << devDX11.GetErrors();
 
-        uiBufferSize = { screenLayout.width * cfg_uiMultiplier, screenLayout.height * cfg_uiMultiplier };
+        // converting back to int for correct buffer size
+        uiBufferSize = { (int)(screenLayout.width * cfg_uiMultiplier), (int)(screenLayout.height * cfg_uiMultiplier) };
         CreateShaders(devDX9);
         CreateBuffers(devDX9, uiBufferSize);
         CreateTextures(devDX11.dev, devDX9, hmdBufferSize, uiBufferSize);
@@ -1262,14 +1266,14 @@ void(__fastcall msub_6A1F40)(void* ecx, void* edx)
 void(__thiscall* sub_6A73E0)(void*) = (void(__thiscall*)(void*))0x006A73E0;
 void(__fastcall msub_6A73E0)(void* ecx, void* edx)
 {
-	sub_6A73E0(ecx);
+    sub_6A73E0(ecx);
 }
 
 // End SceneSetup
 void(__thiscall* sub_6A7540)(void*) = (void(__thiscall*)(void*))0x006A7540;
 void(__fastcall msub_6A7540)(void* ecx, void* edx)
 {
-	sub_6A7540(ecx);
+    sub_6A7540(ecx);
 }
 
 // Present Scene
@@ -1338,7 +1342,7 @@ void(__thiscall* sub_82F0F0)(void*, int, int, int, int, int) = (void(__thiscall*
 void(__fastcall msub_82F0F0)(void* ecx, void* edx, int a, int b, int c, int d, int e)
 {
     sub_82F0F0(ecx, a, b, c, d, e);
-    
+
     if (gPlayerObj && gPlayerObj->pModelContainer == ecx)
         UpdateCharacterAnimation_post(gPlayerObj);
 }
@@ -1433,7 +1437,7 @@ void(__fastcall msub_495410)(void* ecx, void* edx)
         //a[3] = 0.88f;
 
         b[0] = 0.0f; // screen coord center x,y offset -1:1
-        b[1] = 0.0f; 
+        b[1] = 0.0f;
 
         //sub_4BEE60(a, b, 0, 0);
         sub_4BEE60((float*)((int)ecx + 0x44), b, 0, 0);
@@ -1551,7 +1555,7 @@ void(__fastcall msub_495410)(void* ecx, void* edx)
             result = devDX9->SetVertexShaderConstantF(8, &worldMatrix._11, 4);
             result = devDX9->SetTexture(0, cursor.pTexture);
             cursorUI.Render();
-            
+
             for (int i = 0; i < 2; i++)
             {
                 //----
@@ -1780,7 +1784,7 @@ void(__fastcall msub_4A8720)()
     if (svr->isEnabled())
     {
         gPlayerObj = ClntObjMgrGetActivePlayerObj();
-        
+
         //----
         // Active Character is not the active player
         // Possessed something else?
@@ -1861,7 +1865,7 @@ void(__fastcall msub_4A8720)()
         devDX9->GetBackBuffer(NULL, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
         //devDX9->StretchRect(uiRender.pShaderResource, NULL, pBackBuffer, NULL, D3DTEXF_NONE);
         devDX9->StretchRect(BackBuffer[0].pShaderResource, NULL, pBackBuffer, NULL, D3DTEXF_NONE);
-        
+
         if (hiddenTexture)
         {
             IDirect3DSurface9* hiddenSurface = nullptr;
@@ -2020,7 +2024,7 @@ void RunFrameUpdateController()
     byte uiClear[4] = { 0, 0, 0, 0 };
     bool curvedUIAtUI = false;
     bool oskAtUI = false;
- 
+
     float aspect = (float)screenLayout.width / (float)screenLayout.height;
     POINT halfScreen = { screenLayout.width / 2, screenLayout.height / 2 };
 
@@ -2061,7 +2065,7 @@ void RunFrameUpdateController()
                 uiView->at(i).matPosition = (uiScaleMatrix * uiZMatrix * moveMatrix) * uiView->at(i).matPosition;
                 //uiView->at(i).matPosition = playerOffset * uiView->at(i).matPosition;
             }
-            
+
             //uiView->at(uiCutupLayout::rightClick).matPosition *= matController[0]; // right click
             uiView->at(uiCutupLayout::handActionbar).calculateMatrix();
             uiView->at(uiCutupLayout::handActionbar).matPosition *= matController[0];
@@ -2072,10 +2076,10 @@ void RunFrameUpdateController()
             uiView->at(uiCutupLayout::recountOmen).matPosition *= matController[0];
             uiView->at(uiCutupLayout::recountOmen).show = !isCutActionShown;
             uiView->at(uiCutupLayout::recountOmen).enableDetect = !isCutActionShown;
-            
+
             uiView->at(uiCutupLayout::mouseover).calculateMatrix();
             uiView->at(uiCutupLayout::mouseover).matPosition *= matController[1];
-            
+
             //uiView->at(uiCutupLayout::onHead).calculateMatrix();
             //uiView->at(uiCutupLayout::onHead).matPosition *= matHMDPos;
             //uiView->at(uiCutupLayout::menu).calculateMatrix();
@@ -2155,7 +2159,7 @@ void RunFrameUpdateController()
     {
         XMMATRIX aspectScaleMatrix = XMMatrixScaling(aspect, 1, 1);
         curvedUI.SetObjectMatrix(aspectScaleMatrix * playerOffset);// *(uiScaleMatrix* uiZMatrix* moveMatrix));
-        
+
         //              item, atUI, layout, intersection, dist, multiplier, updateDistance, forceMouse, fromCenter;
         intersectList.push_back({ &curvedUI, &curvedUIAtUI, &screenLayout, std::vector<intersectPoint>(), std::vector<bool>(), 1, isOverUI, false, true });
     }
@@ -2196,7 +2200,7 @@ void RunFrameUpdateController()
         XMMATRIX ScaleMatrix = XMMatrixScaling(0.010f, 0.010f, 1.0f);
         XMMATRIX moveMatrix = XMMatrixTranslation(-0.14f + (x * 2) * 0.010f, 0.06f + (y * 2) * 0.010f, 0.0f);
         handWatchSquare[i].SetObjectMatrix((ScaleMatrix * moveMatrix) * viewportRot * matController[0]);
-    
+
         intersectList.push_back({ &handWatchSquare[i], &handWatchAtUI[i], &screenLayout, std::vector<intersectPoint>(), std::vector<bool>(), 1, true, true, false});
 
         x++;
@@ -2208,7 +2212,7 @@ void RunFrameUpdateController()
     }
 
     RunFrameUpdateSetCursor();
- 
+
     //XMMATRIX rayMatrix = matController[1];
     XMMATRIX rayMatrix = (matController[1]);
     XMVECTOR origin = { rayMatrix._41, rayMatrix._42, rayMatrix._43 };
@@ -2402,7 +2406,7 @@ void ExitDetours()
     //if (doLog) logError << "-- ExitDetours Start" << std::endl;
     /*
     logError << "s:" << cfg_uiOffsetScale << " : z:" << cfg_uiOffsetZ << " : y:" << cfg_uiOffsetY << " : d:" << cfg_uiOffsetD << std::endl;
-    
+
     for (unsigned int i = 0; i < uiViewGame.size(); i++)
     {
         logError << i << ": o: " << uiViewGame.at(i).offset.x << ", " << uiViewGame.at(i).offset.y << ", " << uiViewGame.at(i).offset.z << std::endl;
@@ -2410,11 +2414,11 @@ void ExitDetours()
         logError << i << ": s: " << uiViewGame.at(i).scale.x << ", " << uiViewGame.at(i).scale.y << ", " << uiViewGame.at(i).scale.z << std::endl;
     }
     */
-    
-    
+
+
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    
+
     DetourDetach((PVOID*)&sub_4BF0F0, (PVOID)msub_4BF0F0); // Mouse to world ray caluclations
 
     DetourDetach((PVOID*)&sub_869DB0, (PVOID)msub_869DB0); // SetClientMouseResetPoint
@@ -2548,7 +2552,7 @@ void RunControllerGame()
     static bool leftTriggerR = false;
     static bool mouseButtonDownL = false;
     static bool mouseButtonDownR = false;
-    
+
 
     bool haptic_left = false;
     bool haptic_right = false;
@@ -3164,7 +3168,7 @@ void RunControllerGame()
             anglesPalm = GetAngles(matControllerPalm[0]);
             setVerticalRotation(-anglesPalm.vector4_f32[0] - 0.2f);
         }
-        
+
         static float oldOnwardYaw = 0;
         float onwardDiff = 0;
         onwardDiff = angles.vector4_f32[1] - oldOnwardYaw;
@@ -3173,7 +3177,7 @@ void RunControllerGame()
             gRotation = EnsureProperRadians(gRotation - onwardDiff);
             oldOnwardYaw = angles.vector4_f32[1];
         }
-        
+
 
         if (std::fabs(targetFacing) > 0)
         {
