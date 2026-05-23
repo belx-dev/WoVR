@@ -1,6 +1,12 @@
-## •Precompiled versions can be found on the [Flat2VR Discord](http://flat2vr.com)
+# About This Repo
 
-Epilepsy Warning, during loading screens & the race introduction cutscene textures might flicker
+Fork of the original WoVR mod by [ProjectMimer](https://github.com/ProjectMimer/WoVR), which received last update in April 2024. It aim is to clean up the code, fix some of the bugs present in the original mod, and, in the future, maybe even add few extra features.
+
+Full credit goes to ProjectMimer for their original work.
+
+
+
+## Original Readme
 
 WoVR aims to add VR support to 3.3.5a the last patch of the second expansion of the highly successful MMO initially launched in 2004.
 This mod is a experimental release intended to be played seated with VR motion controllers.
