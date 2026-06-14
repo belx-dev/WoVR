@@ -11,6 +11,7 @@
 #include "stCommon.h"
 
 #include <openvr.h>
+#include <vector>
 
 class simpleVR
 {
@@ -39,6 +40,13 @@ class simpleVR
 
 private:
 	void InitalizeVR();
+	std::vector<float> m_frameIntervals;
+	uint32_t m_perfLogFrameCount = 0;
+	uint32_t m_startDroppedFrames = 0;
+	uint32_t m_startFramePresents = 0;
+	uint32_t m_reprojectionCount = 0;
+	bool m_perfLogStarted = false;
+	void UpdatePerfLogging();
 
 public:
 	simpleVR(bool showLogs = false);

@@ -582,6 +582,7 @@ void simpleVR::Render(ID3D11Texture2D* leftEye, ID3D11Texture2D* leftDepth, ID3D
 void simpleVR::WaitGetPoses()
 {
 	vr::VRCompositor()->WaitGetPoses(rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+	UpdatePerfLogging();
 }
 
 void simpleVR::MakeIPDOffset()
@@ -603,4 +604,55 @@ std::string simpleVR::GetErrors()
 	std::string curLog = logError.str();
 	logError.str("");
 	return curLog;
+}
+
+void simpleVR::UpdatePerfLogging()
+{
+	if (!vr::VRCompositor()) return;
+
+	vr::Compositor_FrameTiming timing = {0};
+	timing.m_nSize = sizeof(vr::Compositor_FrameTiming);
+	if (vr::VRCompositor()->GetFrameTiming(&timing, 0))
+	{
+		if (!m_perfLogStarted)
+		{
+			m_startDroppedFrames = timing.m_nNumDroppedFrames;
+			m_startFramePresents = timing.m_nNumFramePresents;
+			m_reprojectionCount = 0;
+			m_perfLogStarted = true;
+			m_perfLogFrameCount = 0;
+			m_frameIntervals.clear();
+		}
+
+		m_frameIntervals.push_back(timing.m_flClientFrameIntervalMs);
+		if (timing.m_nReprojectionFlags > 0)
+			m_reprojectionCount++;
+
+		m_perfLogFrameCount++;
+
+		if (m_perfLogFrameCount >= 600)
+		{
+			// Sort to find p50 and p99
+			std::vector<float> sortedIntervals = m_frameIntervals;
+			std::sort(sortedIntervals.begin(), sortedIntervals.end());
+			float p50 = sortedIntervals[(size_t)(sortedIntervals.size() * 0.50f)];
+			float p99 = sortedIntervals[(size_t)(sortedIntervals.size() * 0.99f)];
+
+			uint32_t dropped = timing.m_nNumDroppedFrames - m_startDroppedFrames;
+			uint32_t presented = timing.m_nNumFramePresents - m_startFramePresents;
+			float dropRate = presented > 0 ? (float)dropped / presented : 0.0f;
+			float reprojRate = presented > 0 ? (float)m_reprojectionCount / presented : 0.0f;
+
+			if (printLogs)
+			{
+				logError << "[PerfLog] 600 frames: p50=" << p50 
+						 << "ms, p99=" << p99 
+						 << "ms, dropRate=" << (dropRate * 100.0f) 
+						 << "%, reprojRate=" << (reprojRate * 100.0f) << "%" << std::endl;
+			}
+
+			// Reset
+			m_perfLogStarted = false;
+		}
+	}
 }
