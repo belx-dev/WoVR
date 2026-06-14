@@ -643,13 +643,10 @@ void simpleVR::UpdatePerfLogging()
 			float dropRate = presented > 0 ? (float)dropped / presented : 0.0f;
 			float reprojRate = presented > 0 ? (float)m_reprojectionCount / presented : 0.0f;
 
-			if (printLogs)
-			{
-				logError << "[PerfLog] 600 frames: p50=" << p50 
-						 << "ms, p99=" << p99 
-						 << "ms, dropRate=" << (dropRate * 100.0f) 
-						 << "%, reprojRate=" << (reprojRate * 100.0f) << "%" << std::endl;
-			}
+			logError << "[PerfLog] 600 frames: p50=" << p50 
+					 << "ms, p99=" << p99 
+					 << "ms, dropRate=" << (dropRate * 100.0f) 
+					 << "%, reprojRate=" << (reprojRate * 100.0f) << "%" << std::endl;
 
 			// Reset
 			m_perfLogStarted = false;
